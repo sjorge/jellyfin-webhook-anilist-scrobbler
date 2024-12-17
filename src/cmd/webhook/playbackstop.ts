@@ -205,14 +205,14 @@ export class AnilistScrobbler {
     payload: PlaybackStopPayload,
     reqid: string,
   ): Promise<Response> {
-    const anilistId: number = payload.Provider_AniList
-      ? parseInt(payload.Provider_AniList, 10)
+    const anilistId: number = payload.Provider_anilist
+      ? parseInt(payload.Provider_anilist, 10)
       : 0;
 
     if (anilistId == 0 || isNaN(anilistId)) {
       const errorMsg = `No or invalid "Provider_AniList" in payload!`;
       log(
-        `webhook/playbackstop: ${errorMsg} Provider_AniList=${payload.Provider_AniList}`,
+        `webhook/playbackstop: ${errorMsg} Provider_AniList=${payload.Provider_anilist}`,
         "error",
         reqid,
       );

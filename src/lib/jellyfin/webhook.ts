@@ -28,8 +28,8 @@ export type PlaybackStopPayload = BasePayload & {
   PlaybackPosition: string;
   IsPaused: boolean;
   PlayedToCompletion: boolean;
-  Provider_AniDB?: string;
-  Provider_AniList?: string;
+  Provider_anidb?: string;
+  Provider_anilist?: string;
   EpisodeNumber: number;
   SeasonNumber: number;
   DeviceId: string;

@@ -5,6 +5,9 @@ TODO
 # bin
 bin/
 
+# tests
+tests/
+
 # Logs
 
 logs

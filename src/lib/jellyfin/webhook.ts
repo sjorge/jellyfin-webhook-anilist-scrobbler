@@ -21,6 +21,8 @@ export type PlaybackStopPayload = BasePayload & {
   UserId: string;
   NotificationUsername: string;
   ItemId: string;
+  SeriesId: string;
+  SeasonId: string;
   ItemType: string;
   RunTimeTicks: string;
   RunTime: string;
@@ -30,6 +32,7 @@ export type PlaybackStopPayload = BasePayload & {
   PlayedToCompletion: boolean;
   Provider_anidb?: string;
   Provider_anilist?: string;
+  SeriesName: string;
   EpisodeNumber: number;
   SeasonNumber: number;
   DeviceId: string;

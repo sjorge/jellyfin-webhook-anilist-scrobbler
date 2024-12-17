@@ -4,6 +4,12 @@ import process from "node:process";
 
 let printBanner = true;
 
+/**
+ * Log message
+ * @param msg - The message to log
+ * @param type - The type of the message
+ * @param reqid - Optional request ID associated with the log message
+ */
 export function log(
   msg: string,
   type: "error" | "warn" | "step" | "done" | "info" = "info",
@@ -49,7 +55,9 @@ export function log(
       break;
   }
 }
-
+/**
+ * Print a banner
+ */
 export function banner(): void {
   if (!printBanner) return;
 

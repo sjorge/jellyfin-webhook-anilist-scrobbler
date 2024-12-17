@@ -5,16 +5,27 @@ import { log } from "lib/logger";
 
 import AniList from "anilist-node";
 import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
-
+/**
+ * Type partial UpdateEntryOptions
+ *
+ * We cannot use UpdateEntryOptions for updating as not all properties are writable,
+ * this is a workaround for the broken type in anilist-node.
+ */
 type UpdateEntryOptionsPartial = {
   progress?: number;
   status?: "CURRENT" | "COMPLETED";
 };
 
+/**
+ * Type for storing our Scrobble result
+ * @property success - records if the scrobble was successful
+ * @property message - message to go along with the scrobble result
+ * @property level - the log level to use for the message
+ */
 export type ScrobbleResult = {
   success: boolean;
-  level: "error" | "warn" | "info";
   message: string;
+  level: "error" | "warn" | "info";
 };
 
 export class AnilistScrobbler {
@@ -22,6 +33,10 @@ export class AnilistScrobbler {
   private config: Config;
   private profileId?: number;
 
+  /**
+   * Scrobbler for Anilist
+   * @param config - Anilist watched configuration object
+   */
   public constructor(config: Config) {
     this.config = config;
 
@@ -32,6 +47,10 @@ export class AnilistScrobbler {
     this.api = new AniList(this.config.anilist.token);
   }
 
+  /**
+   * Perform some initialization requried
+   * @async
+   */
   public async init(): Promise<void> {
     const profile = await this.api.user.getAuthorized();
     if (profile.id == undefined) {
@@ -41,6 +60,14 @@ export class AnilistScrobbler {
     }
   }
 
+  /**
+   * Scrobble playback to Anilist
+   * @async
+   * @param id - Anilist Anime ID
+   * @param episode - Watched episode
+   * @param season - Watched season (we only support season 1, specials are not scrobbleable)
+   * @return {ScrobbleResult} state information on the success of the scrobbling
+   */
   public async scrobble(
     id: number,
     episode: number,
@@ -167,6 +194,13 @@ export class AnilistScrobbler {
     }
   }
 
+  /**
+   * Webhook dispatch handler
+   * @async
+   * @param payload - request payload body
+   * @param reqid - request id
+   * @return {Response} response to send to client
+   */
   public async webhookPlaybackStop(
     payload: PlaybackStopPayload,
     reqid: string,

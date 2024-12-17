@@ -1,4 +1,6 @@
-// Base
+/**
+ * Type describing a common properties of the Jellyfin webhook payload
+ */
 export type BasePayload = {
   ServerId: string;
   ServerName: string;
@@ -9,7 +11,9 @@ export type BasePayload = {
   UtcTimestamp: string;
 };
 
-// PlaybackStop (partial)
+/**
+ * Type partially describing the PlaybackStop properties the Jellyfin webhook payload
+ */
 export type PlaybackStopPayload = BasePayload & {
   Name: string;
   Overview: string;

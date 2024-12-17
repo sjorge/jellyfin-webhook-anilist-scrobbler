@@ -7,6 +7,9 @@ import toml from "@iarna/toml";
 import { deepmerge } from "deepmerge-ts";
 import { banner, log } from "lib/logger";
 
+/**
+ * Type for Configuration of anilistwatched
+ */
 export type Config = {
   webhook: {
     bind: string;
@@ -25,14 +28,15 @@ export const configFile: string = process.env.ANILISTWATCHED_CONFIG
   ? process.env.ANILISTWATCHED_CONFIG
   : path.join(configDir, "config.toml");
 
-/*
+/**
  * Read configuration from file
+ * @return {Config} Configuration object of type Config
  */
 export function readConfig(): Config {
   let config: Config = {
     webhook: {
       bind: "localhost",
-      port: 4035,
+      port: 4091,
     },
     anilist: {},
   };
@@ -47,8 +51,10 @@ export function readConfig(): Config {
   return config;
 }
 
-/*
+/**
  * Write configuration to file
+ * @param config - Configuration objject of type Config to write to file
+ * @return {boolean} success of writing config to disk
  */
 export function writeConfig(config: Config): boolean {
   try {
@@ -65,8 +71,11 @@ export function writeConfig(config: Config): boolean {
   return true;
 }
 
-/*
- * Ensure configuration is usable
+/**
+ * Validates a Configuration oject of type Config
+ * @param config - Configuration objject of type Config to write to file
+ * @param verbose - When true the function logs the reason why a configuration is not valid
+ * @return {boolean} validity of the configuration
  */
 export function validateConfig(
   config: Config,

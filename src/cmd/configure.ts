@@ -13,8 +13,9 @@ import {
 } from "lib/config";
 import { banner, log } from "lib/logger";
 
-/*
+/**
  * Entrypoint `configure` action for commander-js
+ * @param opts - OptionValues from commander-js
  */
 async function configureAction(opts: OptionValues): Promise<void> {
   const config: Config = readConfig();
@@ -36,8 +37,9 @@ async function configureAction(opts: OptionValues): Promise<void> {
   }
 }
 
-/*
+/**
  * Setup `configure` command for commander-js
+ * @param program - commander program
  */
 export function addConfigureCommand(program: Command): void {
   program

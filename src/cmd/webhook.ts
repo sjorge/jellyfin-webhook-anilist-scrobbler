@@ -8,7 +8,7 @@ import { readConfig, validateConfig } from "lib/config";
 import { banner, log } from "lib/logger";
 import { AnilistScrobbler } from "cmd/webhook/playbackstop";
 
-/*
+/**
  * Entrypoint `webook` action for commander-js
  */
 async function webhookAction(): Promise<void> {
@@ -72,8 +72,9 @@ async function webhookAction(): Promise<void> {
   log(`Listening on http://${server.hostname}:${server.port} ...`);
 }
 
-/*
+/**
  * Setup `webhook` command for commander-js
+ * @param commander program
  */
 export function addWebhookCommand(program: Command): void {
   program

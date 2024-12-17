@@ -1,0 +1,17 @@
+[Unit]
+Description=Update anilist watched status when the jellyfin webhook is called
+Requires=opt-anilistwatched.mount
+
+[Service]
+Environment='ANILISTWATCHED_CONFIG=/opt/anilistwatched/etc/config.toml'
+ExecStart=/opt/anilistwatched/bin/anilistwatched webhook
+User=jellyfin
+#DynamicUser=yes
+PrivateTmp=true
+SyslogIdentifier=aninounce
+StandardOutput=journal
+StandardError=journal
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

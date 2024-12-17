@@ -257,6 +257,12 @@ export class AnilistScrobbler {
       });
     }
 
+    log(
+      `webhook/playbackstop: Detected as "${payload.SeriesName} - ${payload.EpisodeNumber} - ${payload.Name}" ...`,
+      "info",
+      reqid,
+    );
+
     const result = await this.scrobble(
       anilistId,
       payload.EpisodeNumber,

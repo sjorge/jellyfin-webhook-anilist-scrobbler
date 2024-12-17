@@ -222,6 +222,21 @@ export class AnilistScrobbler {
       });
     }
 
+    if (!payload.PlayedToCompletion || payload.ItemType != "Episode") {
+      log(
+        "webhook/playbackstop: Not an epsisode or episode not played to completion",
+        "info",
+        reqid,
+      );
+      return new Response(
+        `Not an epsisode or episode not played to completion.`,
+        {
+          status: 200,
+          statusText: `OK`,
+        },
+      );
+    }
+
     const result = await this.scrobble(
       anilistId,
       payload.EpisodeNumber,

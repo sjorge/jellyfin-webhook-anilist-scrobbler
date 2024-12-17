@@ -23,6 +23,7 @@ async function configureAction(opts: OptionValues): Promise<void> {
   if (opts.webhookBind) config.webhook.bind = `${opts.webhookBind}`;
   if (opts.webhookPort) config.webhook.port = opts.webhookPort as number;
   if (opts.anilistToken) config.anilist.token = `${opts.anilistToken}`;
+  if (opts.jellyfinApiKey) config.jellyfin.apiKey = `${opts.jellyfinApiKey}`;
 
   if (!writeConfig(config)) {
     log(`Failed to update ${configFile}!`, "error");
@@ -63,6 +64,7 @@ export function addConfigureCommand(program: Command): void {
       }),
     )
     .option("--anilist-token <token>", "your anilist http client token")
+    .option("--jellyfin-api-key <api_key>", "jellyfin API key")
     .option("--dump", "dump configuration")
     .action(configureAction);
 }

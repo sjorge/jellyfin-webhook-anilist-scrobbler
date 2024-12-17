@@ -18,6 +18,9 @@ export type Config = {
   anilist: {
     token?: string;
   };
+  jellyfin: {
+    apiKey?: string;
+  };
 };
 
 const configDir: string = process.env.XDG_CONFIG_HOME
@@ -39,6 +42,7 @@ export function readConfig(): Config {
       port: 4091,
     },
     anilist: {},
+    jellyfin: {},
   };
 
   if (fs.existsSync(configFile) && fs.statSync(configFile).isFile()) {
@@ -86,6 +90,13 @@ export function validateConfig(
     if (verbose) {
       banner();
       log("Missing anilist token!", "error");
+    }
+    ret = false;
+  }
+  if (config.jellyfin.apiKey === undefined) {
+    if (verbose) {
+      banner();
+      log("Missing jellyfin API key!", "error");
     }
     ret = false;
   }

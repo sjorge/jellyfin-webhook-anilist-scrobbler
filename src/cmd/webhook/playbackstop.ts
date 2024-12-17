@@ -5,6 +5,7 @@ import { log } from "lib/logger";
 
 import AniList from "anilist-node";
 import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
+import { JellyfinMiniApi } from "lib/jellyfin/api";
 /**
  * Type partial UpdateEntryOptions
  *
@@ -32,6 +33,9 @@ export class AnilistScrobbler {
   private api: AniList;
   private config: Config;
   private profileId?: number;
+  private jellyfin: {
+    [url: string]: JellyfinMiniApi;
+  } = {};
 
   /**
    * Scrobbler for Anilist
@@ -42,6 +46,10 @@ export class AnilistScrobbler {
 
     if (this.config.anilist.token == undefined) {
       throw new Error("Missing anilist.token in the configuration.");
+    }
+
+    if (this.config.jellyfin.apiKey == undefined) {
+      throw new Error("Missing jellyfin.apiKey in the configuration.");
     }
 
     this.api = new AniList(this.config.anilist.token);
@@ -205,23 +213,6 @@ export class AnilistScrobbler {
     payload: PlaybackStopPayload,
     reqid: string,
   ): Promise<Response> {
-    const anilistId: number = payload.Provider_anilist
-      ? parseInt(payload.Provider_anilist, 10)
-      : 0;
-
-    if (anilistId == 0 || isNaN(anilistId)) {
-      const errorMsg = `No or invalid "Provider_AniList" in payload!`;
-      log(
-        `webhook/playbackstop: ${errorMsg} Provider_AniList=${payload.Provider_anilist}`,
-        "error",
-        reqid,
-      );
-      return new Response(`${errorMsg}\nPayload = ${JSON.stringify(payload)}`, {
-        status: 404,
-        statusText: `Not found`,
-      });
-    }
-
     if (!payload.PlayedToCompletion || payload.ItemType != "Episode") {
       log(
         "webhook/playbackstop: Not an epsisode or episode not played to completion",
@@ -235,6 +226,35 @@ export class AnilistScrobbler {
           statusText: `OK`,
         },
       );
+    }
+
+    // initialize jellyfin API if required
+    if (this.jellyfin[payload.ServerUrl] === undefined) {
+      this.jellyfin[payload.ServerUrl] = new JellyfinMiniApi(
+        payload.ServerUrl,
+        this.config.jellyfin.apiKey as string,
+      );
+    }
+
+    const anilistIdString = await this.jellyfin[
+      payload.ServerUrl
+    ].getProviderFromSeries(payload.SeriesId, "anilist");
+
+    const anilistId: number = anilistIdString
+      ? parseInt(anilistIdString, 10)
+      : 0;
+
+    if (anilistId == 0 || isNaN(anilistId)) {
+      const errorMsg = `No or invalid "Provider_AniList" in payload!`;
+      log(
+        `webhook/playbackstop: ${errorMsg} Provider_AniList=${payload.Provider_anilist}`,
+        "error",
+        reqid,
+      );
+      return new Response(`${errorMsg}\nPayload = ${JSON.stringify(payload)}`, {
+        status: 404,
+        statusText: `Not found`,
+      });
     }
 
     const result = await this.scrobble(

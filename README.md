@@ -26,14 +26,14 @@ sudo cp bin/jw-anilist-watched /usr/local/bin
 1. approve the generated token by visting `https://anilist.co/api/v2/oauth/authorize?client_id={clientID}&response_type=token` (do not forget to replace clientID in the URL!)
 
 ```bash
-akiba configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
+jw-anilist-watched configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
 ```
 
 ## Jellyfin API key
 API key is needed to lookup the Anilist ID from the series, the PlaybackStop notification for episodes which we need for scrobbling does not include those.
 
 ```bash
-akiba configure --jellyfin-api-key MY_API_KEY
+jw-anilist-watched configure --jellyfin-api-key MY_API_KEY
 ```
 
 ## Jellyfin webhook

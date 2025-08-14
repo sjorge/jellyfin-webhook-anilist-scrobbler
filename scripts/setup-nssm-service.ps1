@@ -6,6 +6,7 @@ param(
   [string]$LogDir = "C:\\ProgramData\\AniListWebhook",
   [string]$Account = "",
   [string]$ConfigPath = "$env:USERPROFILE\\.config\\anilistwatched\\config.toml",
+  [switch]$Configure = $false,
   [switch]$AddFirewall = $true
 )
 
@@ -27,6 +28,40 @@ function Ensure-NssmInstalled {
   if ($null -eq $nssm) { throw "NSSM installation failed or not in PATH." }
 }
 
+function New-OrUpdate-ConfigToml {
+  param(
+    [Parameter(Mandatory=$true)][string]$Path
+  )
+
+  Write-Host "Creating/updating config at: $Path"
+  $cfgDir = Split-Path -Parent $Path
+  if (-not (Test-Path -LiteralPath $cfgDir)) {
+    New-Item -ItemType Directory -Path $cfgDir -Force | Out-Null
+  }
+
+  $anilistToken = Read-Host "Enter AniList token"
+  $jellyfinApiKey = Read-Host "Enter Jellyfin API key"
+  $jellyfinUrl = Read-Host "Enter Jellyfin base URL (e.g. http://192.168.1.27:8096)"
+  $libraryName = Read-Host "Enter Jellyfin library name for anime (default: Animes)"
+  if ([string]::IsNullOrWhiteSpace($libraryName)) { $libraryName = 'Animes' }
+
+  $content = @"
+[webhook]
+bind = "0.0.0.0"
+port = 4091
+
+[anilist]
+token = "$anilistToken"
+
+[jellyfin]
+apiKey = "$jellyfinApiKey"
+url = "$jellyfinUrl"
+libraryName = "$libraryName"
+"@
+
+  Set-Content -LiteralPath $Path -Value $content -Encoding UTF8
+}
+
 try {
   Ensure-NssmInstalled
 
@@ -34,6 +69,12 @@ try {
   if (-not (Test-Path -LiteralPath $App)) { throw "App not found: $App" }
   if (-not (Test-Path -LiteralPath $AppDirectory)) { throw "AppDirectory not found: $AppDirectory" }
   New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
+
+  # Ensure config exists or ask the user
+  $needConfig = $Configure -or (-not (Test-Path -LiteralPath $ConfigPath))
+  if ($needConfig) {
+    New-OrUpdate-ConfigToml -Path $ConfigPath
+  }
 
   # Install / configure service
   nssm stop  $ServiceName *> $null

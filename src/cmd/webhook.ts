@@ -2,11 +2,17 @@ import type { Server } from "bun";
 import { Command } from "@commander-js/extra-typings";
 
 import type { Config } from "lib/config";
-import type { BasePayload, PlaybackStopPayload } from "lib/jellyfin/webhook";
+import type {
+  BasePayload,
+  PlaybackStopPayload,
+  AuthenticationPayload,
+  UserDataSavedPayload,
+} from "lib/jellyfin/webhook";
 
 import { readConfig, validateConfig } from "lib/config";
 import { banner, log } from "lib/logger";
 import { AnilistScrobbler } from "cmd/webhook/playbackstop";
+import { runBackfill } from "cmd/webhook/sync";
 
 /**
  * Entrypoint `webook` action for commander-js
@@ -54,6 +60,26 @@ async function webhookAction(): Promise<void> {
             payload as PlaybackStopPayload,
             reqid,
           );
+        }
+
+        if (payload.NotificationType == "AuthenticationSucceeded") {
+          const userPayload = payload as AuthenticationPayload;
+          log(
+            `webhook: received ${payload.NotificationType} for user ${userPayload.NotificationUsername} (${userPayload.UserId}).`,
+            "info",
+            reqid,
+          );
+          return new Response("OK", { status: 200, statusText: "OK" });
+        }
+
+        if (payload.NotificationType == "UserDataSaved") {
+          const p = payload as unknown as UserDataSavedPayload & PlaybackStopPayload;
+          log(
+            `webhook: dispatching NotificationType ${payload.NotificationType} from ${clientIPPrintable}`,
+            "info",
+            reqid,
+          );
+          return await anilistScrobbler.webhookUserDataSaved(p, reqid);
         }
       }
 

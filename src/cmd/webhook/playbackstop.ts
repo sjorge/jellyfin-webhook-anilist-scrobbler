@@ -1,11 +1,12 @@
 import type { Config } from "lib/config";
-import type { PlaybackStopPayload } from "lib/jellyfin/webhook";
+import type { PlaybackStopPayload, UserDataSavedPayload } from "lib/jellyfin/webhook";
 
 import { log } from "lib/logger";
 
 import AniList from "anilist-node";
 import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
 import { JellyfinMiniApi } from "lib/jellyfin/api";
+// sync helpers are not required in this file
 /**
  * Type partial UpdateEntryOptions
  *
@@ -229,15 +230,37 @@ export class AnilistScrobbler {
     }
 
     // initialize jellyfin API if required
-    if (this.jellyfin[payload.ServerUrl] === undefined) {
-      this.jellyfin[payload.ServerUrl] = new JellyfinMiniApi(
-        payload.ServerUrl,
+    let rawServerUrl = (payload.ServerUrl || "").trim();
+    if (!rawServerUrl && this.config.jellyfin.url) {
+      rawServerUrl = this.config.jellyfin.url;
+      log(
+        `webhook/playbackstop: Using configured jellyfin.url '${rawServerUrl}' as fallback`,
+        "info",
+        reqid,
+      );
+    }
+
+    const normalizedServerUrl = /^https?:\/\//i.test(rawServerUrl)
+      ? rawServerUrl
+      : `http://${rawServerUrl}`;
+
+    if (rawServerUrl !== normalizedServerUrl) {
+      log(
+        `webhook/playbackstop: Normalized ServerUrl '${rawServerUrl}' -> '${normalizedServerUrl}'`,
+        "info",
+        reqid,
+      );
+    }
+
+    if (this.jellyfin[normalizedServerUrl] === undefined) {
+      this.jellyfin[normalizedServerUrl] = new JellyfinMiniApi(
+        normalizedServerUrl,
         this.config.jellyfin.apiKey as string,
       );
     }
 
     const anilistIdString = await this.jellyfin[
-      payload.ServerUrl
+      normalizedServerUrl
     ].getProviderFromSeries(payload.SeriesId, "anilist");
 
     const anilistId: number = anilistIdString
@@ -277,6 +300,98 @@ export class AnilistScrobbler {
       });
     } else {
       log(`webhook/playbackstop: ${result.message}`, result.level, reqid);
+      return new Response(result.message, {
+        status: result.level == "error" ? 500 : 400,
+        statusText:
+          result.level == "error" ? "Internal Server Error" : "Bad Request",
+      });
+    }
+  }
+
+  /**
+   * Webhook handler for UserDataSaved (e.g., user manually marked watched)
+   * Processes only Episodes and updates AniList progress accordingly.
+   */
+  public async webhookUserDataSaved(
+    payload: UserDataSavedPayload & Partial<PlaybackStopPayload>,
+    reqid: string,
+  ): Promise<Response> {
+    if (payload.ItemType != "Episode") {
+      log("webhook/userdatasaved: Not an episode; ignoring", "info", reqid);
+      return new Response("Not an episode.", { status: 200, statusText: "OK" });
+    }
+
+    // initialize jellyfin API if required (same normalization as PlaybackStop)
+    let rawServerUrl = (payload.ServerUrl || "").trim();
+    if (!rawServerUrl && this.config.jellyfin.url) {
+      rawServerUrl = this.config.jellyfin.url;
+      log(
+        `webhook/userdatasaved: Using configured jellyfin.url '${rawServerUrl}' as fallback`,
+        "info",
+        reqid,
+      );
+    }
+
+    const normalizedServerUrl = /^https?:\/\//i.test(rawServerUrl)
+      ? rawServerUrl
+      : `http://${rawServerUrl}`;
+
+    if (rawServerUrl !== normalizedServerUrl) {
+      log(
+        `webhook/userdatasaved: Normalized ServerUrl '${rawServerUrl}' -> '${normalizedServerUrl}'`,
+        "info",
+        reqid,
+      );
+    }
+
+    if (this.jellyfin[normalizedServerUrl] === undefined) {
+      this.jellyfin[normalizedServerUrl] = new JellyfinMiniApi(
+        normalizedServerUrl,
+        this.config.jellyfin.apiKey as string,
+      );
+    }
+
+    // Lookup AniList provider id by series
+    const anilistIdString = await this.jellyfin[
+      normalizedServerUrl
+    ].getProviderFromSeries(payload.SeriesId as string, "anilist");
+
+    const anilistId: number = anilistIdString
+      ? parseInt(anilistIdString, 10)
+      : 0;
+
+    if (anilistId == 0 || isNaN(anilistId)) {
+      const errorMsg = `No or invalid \"Provider_AniList\" in payload!`;
+      log(
+        `webhook/userdatasaved: ${errorMsg} Provider_AniList=${(payload as any).Provider_anilist}`,
+        "error",
+        reqid,
+      );
+      return new Response(`${errorMsg}\nPayload = ${JSON.stringify(payload)}`, {
+        status: 404,
+        statusText: `Not found`,
+      });
+    }
+
+    const episode = (payload.EpisodeNumber as number) ?? 0;
+    const season = (payload.SeasonNumber as number) ?? 1;
+
+    log(
+      `webhook/userdatasaved: Detected as \"${payload.SeriesName} - ${episode} - ${payload.Name}\" ...`,
+      "info",
+      reqid,
+    );
+
+    const result = await this.scrobble(anilistId, episode, season);
+
+    if (result.success) {
+      log(`webhook/userdatasaved: ${result.message}`, "done", reqid);
+      return new Response(result.message, {
+        status: 200,
+        statusText: "OK",
+      });
+    } else {
+      log(`webhook/userdatasaved: ${result.message}`, result.level, reqid);
       return new Response(result.message, {
         status: result.level == "error" ? 500 : 400,
         statusText:

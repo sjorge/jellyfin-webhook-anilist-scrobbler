@@ -17,12 +17,16 @@ type PartialSeriesItemResult = {
       ProviderIds: {
         [name: string]: string;
       };
+      SeriesId?: string;
+      IndexNumber?: number;
+      ParentIndexNumber?: number;
     },
   ];
 };
 
 export class JellyfinMiniApi {
   private client;
+  private baseUrl: string;
 
   /**
    * Minimal API Client for Jellyfin
@@ -31,8 +35,9 @@ export class JellyfinMiniApi {
    * @param apiKey - A valid API key
    */
   public constructor(url: string, apiKey: string) {
+    this.baseUrl = url.endsWith("/") ? url : `${url}/`;
     this.client = axios.create({
-      baseURL: url.endsWith("/") ? url : `${url}/`,
+      baseURL: this.baseUrl,
       httpsAgent: new https.Agent({ keepAlive: true }),
       // timeout not yet supported under bun (ERR_NOT_IMPLEMENTED)
       // timeout: 10000,
@@ -74,6 +79,35 @@ export class JellyfinMiniApi {
     }
   }
 
+  public async getUserViews(userId: string): Promise<{
+    Items: { Name: string; Id: string }[];
+  }> {
+    const res = (await this.query(`/Users/${userId}/Views`)) as {
+      Items: { Name: string; Id: string }[];
+    };
+    return res;
+  }
+
+  public async getSeriesInLibrary(
+    userId: string,
+    libraryId: string,
+  ): Promise<PartialSeriesItemResult> {
+    const res = (await this.query(
+      `/Users/${userId}/Items?ParentId=${libraryId}&IncludeItemTypes=Series&Fields=ProviderIds&Recursive=true&limit=10000&StartIndex=0`,
+    )) as PartialSeriesItemResult;
+    return res;
+  }
+
+  public async getPlayedEpisodesForSeries(
+    userId: string,
+    seriesId: string,
+  ): Promise<PartialSeriesItemResult> {
+    const res = (await this.query(
+      `/Users/${userId}/Items?IncludeItemTypes=Episode&SeriesIds=${seriesId}&Filters=IsPlayed&Fields=ParentIndexNumber,IndexNumber&Recursive=true&limit=10000&StartIndex=0`,
+    )) as PartialSeriesItemResult;
+    return res;
+  }
+
   public async getProviderFromSeries(
     seriesId: string,
     providerName: string,
@@ -91,6 +125,13 @@ export class JellyfinMiniApi {
     }
 
     return undefined;
+  }
+
+  /**
+   * Return a friendly base URL used for requests
+   */
+  public getBaseUrl(): string {
+    return this.baseUrl;
   }
 }
 

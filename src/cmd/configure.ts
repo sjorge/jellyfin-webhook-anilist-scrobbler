@@ -24,6 +24,9 @@ async function configureAction(opts: OptionValues): Promise<void> {
   if (opts.webhookPort) config.webhook.port = opts.webhookPort as number;
   if (opts.anilistToken) config.anilist.token = `${opts.anilistToken}`;
   if (opts.jellyfinApiKey) config.jellyfin.apiKey = `${opts.jellyfinApiKey}`;
+  if (opts.jellyfinUrl) config.jellyfin.url = `${opts.jellyfinUrl}`;
+  if (opts.jellyfinLibrary) config.jellyfin.libraryName = `${opts.jellyfinLibrary}`;
+  if (opts.jellyfinUrl) config.jellyfin.url = `${opts.jellyfinUrl}`;
 
   if (!writeConfig(config)) {
     log(`Failed to update ${configFile}!`, "error");
@@ -65,6 +68,8 @@ export function addConfigureCommand(program: Command): void {
     )
     .option("--anilist-token <token>", "your anilist http client token")
     .option("--jellyfin-api-key <api_key>", "jellyfin API key")
+    .option("--jellyfin-url <url>", "base URL of your Jellyfin server, e.g. http://192.168.1.27:8096")
+    .option("--jellyfin-library <name>", "library name to backfill, e.g. Animes")
     .option("--dump", "dump configuration")
     .action(configureAction);
 }

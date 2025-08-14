@@ -40,4 +40,20 @@ export type PlaybackStopPayload = BasePayload & {
   ClientName: string;
 };
 
+/**
+ * Type describing a minimal AuthenticationSucceeded payload
+ */
+export type AuthenticationPayload = BasePayload & {
+  UserId: string;
+  NotificationUsername: string;
+};
+
+/**
+ * Type describing a minimal UserDataSaved payload
+ */
+export type UserDataSavedPayload = BasePayload & {
+  UserId: string;
+  NotificationUsername: string;
+};
+
 // vim: tabstop=2 shiftwidth=2 softtabstop=0 smarttab expandtab

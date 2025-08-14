@@ -20,6 +20,8 @@ export type Config = {
   };
   jellyfin: {
     apiKey?: string;
+    url?: string;
+    libraryName?: string;
   };
 };
 

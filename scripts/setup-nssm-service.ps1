@@ -5,6 +5,7 @@ param(
   [string]$AppDirectory = "D:\\Documents\\Git\\jellyfin-webhook-anilistwatched",
   [string]$LogDir = "C:\\ProgramData\\AniListWebhook",
   [string]$Account = "",
+  [string]$ConfigPath = "$env:USERPROFILE\\.config\\anilistwatched\\config.toml",
   [switch]$AddFirewall = $true
 )
 
@@ -54,8 +55,18 @@ try {
   }
   $pwdSecure = Read-Host "Enter password for $Account" -AsSecureString
   $pwdPlain  = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($pwdSecure))
-  nssm set $ServiceName ObjectName $Account
-  nssm set $ServiceName ObjectPassword $pwdPlain
+  # Set username and password together (no ObjectPassword param)
+  nssm set $ServiceName ObjectName $Account $pwdPlain
+
+  # Set config env var if present (so service finds tokens)
+  if (-not [string]::IsNullOrWhiteSpace($ConfigPath) -and (Test-Path -LiteralPath $ConfigPath)) {
+    nssm set $ServiceName AppEnvironmentExtra "ANILISTWATCHED_CONFIG=$ConfigPath"
+  } elseif (Test-Path -LiteralPath (Join-Path $LogDir 'config.toml')) {
+    $cfg = (Join-Path $LogDir 'config.toml')
+    nssm set $ServiceName AppEnvironmentExtra "ANILISTWATCHED_CONFIG=$cfg"
+  } else {
+    Write-Warning "Config file not found. Set AppEnvironmentExtra later: ANILISTWATCHED_CONFIG=FULL\\PATH\\TO\\config.toml"
+  }
 
   # Firewall rule (optional)
   if ($AddFirewall) {

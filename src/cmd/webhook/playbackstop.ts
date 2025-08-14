@@ -19,6 +19,23 @@ type UpdateEntryOptionsPartial = {
 };
 
 /**
+ * Type for adding new entries to lists
+ */
+type AddEntryOptions = {
+  status?: "CURRENT" | "COMPLETED" | "PLANNING" | "DROPPED" | "PAUSED" | "REPEATING";
+  progress?: number;
+  score?: number;
+  progressVolumes?: number;
+  repeat?: number;
+  priority?: number;
+  private?: boolean;
+  hiddenFromStatusLists?: boolean;
+  notes?: string;
+  startedAt?: { year: number; month: number; day: number };
+  completedAt?: { year: number; month: number; day: number };
+};
+
+/**
  * Type for storing our Scrobble result
  * @property success - records if the scrobble was successful
  * @property message - message to go along with the scrobble result
@@ -98,6 +115,43 @@ export class AnilistScrobbler {
 
     try {
       let result: UpdatedEntry | undefined;
+      let animeFound = false;
+
+      // First, check if anime exists in any list
+      for (const list of await this.api.lists.anime(this.profileId)) {
+        for (const entry of list.entries) {
+          if (entry.media.id == id) {
+            animeFound = true;
+            break;
+          }
+        }
+        if (animeFound) break;
+      }
+
+      // If anime is not found in any list, add it to "Watching" list
+      if (!animeFound) {
+        log(`Anime (${id}) not found in any list. Adding to "Watching" list...`, "info");
+        
+        try {
+          const addEntryOptions: AddEntryOptions = {
+            status: "CURRENT" as const,
+            progress: episode,
+          };
+          
+          result = await this.api.lists.addEntry(id, addEntryOptions as UpdateEntryOptions);
+          animeFound = true;
+          
+          log(`Anime (${id}) successfully added to "Watching" list with progress ${episode}`, "info");
+        } catch (addError) {
+          return {
+            success: false,
+            level: "error",
+            message: `Failed to add anime (${id}) to list: ${addError}`,
+          } as ScrobbleResult;
+        }
+      }
+
+      // Now proceed with the existing logic for updating progress
       for (const list of await this.api.lists.anime(this.profileId)) {
         if (list.name == "Watching") {
           // only increase progress if in Watching list

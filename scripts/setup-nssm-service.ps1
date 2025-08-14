@@ -1,3 +1,18 @@
+# Jellyfin AniList Webhook Service Setup Script
+# This script sets up a Windows service for the Jellyfin AniList webhook
+# 
+# Features:
+# - Automatically compiles the latest code (unless -SkipCompile is used)
+# - Installs/updates the Windows service using NSSM
+# - Configures logging and firewall rules
+# - Handles configuration file setup
+#
+# Usage:
+#   .\setup-nssm-service.ps1                    # Full setup with compilation
+#   .\setup-nssm-service.ps1 -SkipCompile       # Setup using pre-compiled binary
+#   .\setup-nssm-service.ps1 -Configure         # Setup with configuration prompts
+#
+# Requires: Administrator privileges, Bun (for compilation), NSSM
 param(
   [string]$ServiceName = "AniListWebhook",
   [string]$App = "D:\\Documents\\Git\\jellyfin-webhook-anilistwatched\\bin\\jw-anilist-watched.exe",
@@ -7,7 +22,8 @@ param(
   [string]$Account = "",
   [string]$ConfigPath = "$env:USERPROFILE\\.config\\anilistwatched\\config.toml",
   [switch]$Configure = $false,
-  [switch]$AddFirewall = $true
+  [switch]$AddFirewall = $true,
+  [switch]$SkipCompile = $false
 )
 
 # Requires elevation
@@ -26,6 +42,34 @@ function Ensure-NssmInstalled {
   choco install nssm -y --no-progress
   $nssm = Get-Command nssm -ErrorAction SilentlyContinue
   if ($null -eq $nssm) { throw "NSSM installation failed or not in PATH." }
+}
+
+function Compile-Project {
+  param(
+    [Parameter(Mandatory=$true)][string]$ProjectDirectory
+  )
+  
+  Write-Host "Compiling project in: $ProjectDirectory"
+  
+  # Check if bun is available
+  $bun = Get-Command bun -ErrorAction SilentlyContinue
+  if ($null -eq $bun) {
+    throw "Bun is not installed or not in PATH. Please install Bun first."
+  }
+  
+  # Change to project directory and compile
+  Push-Location $ProjectDirectory
+  try {
+    Write-Host "Running: bun run compile"
+    $compileResult = & bun run compile 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      throw "Compilation failed: $compileResult"
+    }
+    Write-Host "Compilation successful!" -ForegroundColor Green
+  }
+  finally {
+    Pop-Location
+  }
 }
 
 function New-OrUpdate-ConfigToml {
@@ -63,6 +107,13 @@ libraryName = "$libraryName"
 }
 
 try {
+  # Compile the project if not skipped
+  if (-not $SkipCompile) {
+    Compile-Project -ProjectDirectory $AppDirectory
+  } else {
+    Write-Host "Skipping compilation as requested."
+  }
+  
   Ensure-NssmInstalled
 
   # Paths

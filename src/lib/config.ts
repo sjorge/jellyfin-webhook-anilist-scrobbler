@@ -16,7 +16,13 @@ export type Config = {
     port: number;
   };
   anilist: {
-    token?: string;
+    token?: string; // Global fallback token
+    users?: {
+      [username: string]: {
+        token: string;
+        displayName?: string; // Optional display name for the user
+      };
+    };
   };
   jellyfin: {
     apiKey?: string;
@@ -88,13 +94,19 @@ export function validateConfig(
   verbose: boolean = false,
 ): boolean {
   let ret = true;
-  if (config.anilist.token === undefined) {
+  
+  // Check if we have either a global token or per-user tokens
+  const hasGlobalToken = config.anilist.token !== undefined;
+  const hasUserTokens = config.anilist.users !== undefined && Object.keys(config.anilist.users).length > 0;
+  
+  if (!hasGlobalToken && !hasUserTokens) {
     if (verbose) {
       banner();
-      log("Missing anilist token!", "error");
+      log("Missing AniList token configuration! Either provide a global token or per-user tokens.", "error");
     }
     ret = false;
   }
+  
   if (config.jellyfin.apiKey === undefined) {
     if (verbose) {
       banner();
@@ -103,6 +115,32 @@ export function validateConfig(
     ret = false;
   }
   return ret;
+}
+
+/**
+ * Get the AniList token for a specific Jellyfin username
+ * @param config - Configuration object
+ * @param username - Jellyfin username
+ * @return {string | undefined} The AniList token for the user, or undefined if none found
+ */
+export function getUserAniListToken(config: Config, username: string): string | undefined {
+  // First try to get user-specific token
+  if (config.anilist.users && config.anilist.users[username]) {
+    return config.anilist.users[username].token;
+  }
+  
+  // Fall back to global token
+  return config.anilist.token;
+}
+
+/**
+ * Check if a user has a valid AniList token configuration
+ * @param config - Configuration object
+ * @param username - Jellyfin username
+ * @return {boolean} True if user has a valid token configuration
+ */
+export function hasUserAniListToken(config: Config, username: string): boolean {
+  return getUserAniListToken(config, username) !== undefined;
 }
 
 // vim: tabstop=2 shiftwidth=2 softtabstop=0 smarttab expandtab

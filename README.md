@@ -1,254 +1,279 @@
-# Anilist Watched
+# Jellyfin Webhook AniList Watched
 
-Jellyfin webhook target that will mark shows as watched on anilist.
+A Jellyfin webhook service that automatically updates your AniList anime progress when you watch episodes or manually mark them as watched/unwatched.
 
-To install dependencies:
+## ✨ Features
 
-```bash
-bun install
-```
+- **Automatic Progress Updates**: Updates AniList when episodes are played to completion
+- **Manual Mark Support**: Handles when you manually mark episodes as watched/unwatched
+- **Multi-User Support**: Configure separate AniList tokens for different Jellyfin users
+- **Auto-Add Anime**: Automatically adds anime to your "Watching" list if not already present
+- **Smart Episode Detection**: Intelligently determines episode play state with fallback mechanisms
+- **Robust Error Handling**: Retry logic and fallback methods for reliable operation
+- **Windows Service**: Easy installation and management as a Windows service
 
-Copy `bin/jw-anilist-watched` to somewhere in your path.
+## 🚀 Quick Start
 
-```bash
-# local user
-cp bin/jw-anilist-watched ~/.local/bin
+### Prerequisites
 
-# system wide
-sudo cp bin/jw-anilist-watched /usr/local/bin
-```
+- **Jellyfin Server** with webhooks enabled
+- **AniList Account** with API token
+- **Windows** (for the provided service setup)
+- **Bun** runtime (for compilation)
 
-# Configuration
-## *Anilist Token*
-1. visit https://anilist.co/settings/developer
-1. click *Create New Client*
-1. enter `https://anilist.co/api/v2/oauth/pin` as the *Redirect URL*
-1. approve the generated token by visting `https://anilist.co/api/v2/oauth/authorize?client_id={clientID}&response_type=token` (do not forget to replace clientID in the URL!)
+### 1. Get Your AniList Token
 
-```bash
-jw-anilist-watched configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
-```
+1. Go to [AniList](https://anilist.co/settings/developer)
+2. Create a new client
+3. Copy your access token
 
-## Jellyfin API key
-API key is needed to lookup the Anilist ID from the series, the PlaybackStop notification for episodes which we need for scrobbling does not include those.
+### 2. Configure Jellyfin Webhooks
 
-```bash
-jw-anilist-watched configure --jellyfin-api-key MY_API_KEY
-```
+1. In Jellyfin Admin Dashboard, go to **Advanced** → **Webhooks**
+2. Add a new webhook with URL: `http://your-server:4091`
+3. Select these notification types:
+   - `PlaybackStop` (for automatic progress updates)
+   - `UserDataSaved` (for manual mark handling)
 
-## Jellyfin webhook
-This will only work when the AniList ProviderID is present, this should be the case when anilist is the highest provider set for the library.
+### 3. Setup the Service
 
-1. Install the webhook plugin in Jellyfin
-1. Go to the webhook plugin configuration page
-1. Click `Add Generic Destination`
-1. Set the `Webhook Url` to the URL where **anilist-watched** is listening and use the */* endpoint e.g. `http://localhost:4035/`
-1. Only check `Playback Stop` under `Notification Type`
-1. Only check your user under `User Filter`
-1. Only check `Episodes` under `Item Type`
-1. Check `Send All Properties (ignores template)`
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/AtaraxyState/jellyfin-webhook-anilistwatched.git
+   cd jellyfin-webhook-anilistwatched
+   ```
 
-# Windows Service Setup and Deployment
+2. **Run the setup script as Administrator:**
+   ```powershell
+   # Run PowerShell as Administrator
+   .\scripts\setup-nssm-service.ps1
+   ```
 
-For Windows users, this project includes a PowerShell script to automatically set up and deploy the AniList webhook as a Windows service. This provides several advantages:
+   The script will:
+   - Compile the TypeScript code
+   - Install the Windows service
+   - Configure it to start automatically
+   - Start the service
 
-- **Automatic Startup**: Service starts automatically when Windows boots
-- **Background Operation**: Runs continuously in the background
-- **Easy Management**: Use standard Windows service management tools
-- **Automatic Compilation**: Always runs the latest version of your code
-- **Professional Deployment**: Proper logging, error handling, and service configuration
+3. **Configure the service:**
+   ```powershell
+   # Edit configuration (optional)
+   notepad C:\Users\%USERNAME%\.config\anilistwatched\config.toml
+   ```
 
-## Prerequisites
+## ⚙️ Configuration
 
-Before running the setup script, ensure you have:
+### Basic Configuration
 
-1. **Administrator Privileges**: The script must be run as Administrator
-2. **Bun Runtime**: For automatic compilation (install from [bun.sh](https://bun.sh))
-3. **PowerShell Execution Policy**: Set to allow script execution
-4. **Git Repository**: Clone the project to your desired location
+Create or edit `C:\Users\%USERNAME%\.config\anilistwatched\config.toml`:
 
-## Quick Setup
-
-### 1. **Run as Administrator**
-Right-click on PowerShell and select "Run as Administrator"
-
-### 2. **Navigate to Project Directory**
-```powershell
-cd "D:\Documents\Git\jellyfin-webhook-anilistwatched"
-```
-
-### 3. **Execute Setup Script**
-```powershell
-.\scripts\setup-nssm-service.ps1
-```
-
-The script will:
-- ✅ Automatically compile your latest code
-- ✅ Install NSSM (if not present)
-- ✅ Create the Windows service
-- ✅ Configure logging and firewall rules
-- ✅ Start the service automatically
-
-## Advanced Setup Options
-
-### **Skip Compilation**
-If you want to use a pre-compiled binary:
-```powershell
-.\scripts\setup-nssm-service.ps1 -SkipCompile
-```
-
-### **Configure Settings**
-To set up configuration during installation:
-```powershell
-.\scripts\setup-nssm-service.ps1 -Configure
-```
-
-### **Custom Service Name**
-```powershell
-.\scripts\setup-nssm-service.ps1 -ServiceName "MyAniListWebhook"
-```
-
-### **Custom Paths**
-```powershell
-.\scripts\setup-nssm-service.ps1 -AppDirectory "C:\MyCustomPath" -LogDir "C:\MyLogs"
-```
-
-## Service Management
-
-### **Check Service Status**
-```powershell
-sc query AniListWebhook
-```
-
-### **Start/Stop Service**
-```powershell
-# Start the service
-nssm start AniListWebhook
-
-# Stop the service
-nssm stop AniListWebhook
-
-# Restart the service
-nssm restart AniListWebhook
-```
-
-### **View Service Logs**
-```powershell
-# View main service log
-Get-Content "C:\ProgramData\AniListWebhook\service.log" -Tail 50
-
-# Follow logs in real-time
-Get-Content "C:\ProgramData\AniListWebhook\service.log" -Tail 100 -Wait
-
-# View error log
-Get-Content "C:\ProgramData\AniListWebhook\service.err.log" -Tail 20
-```
-
-### **Remove Service**
-```powershell
-nssm remove AniListWebhook confirm
-```
-
-## Configuration File
-
-The service uses a TOML configuration file located at:
-```
-%USERPROFILE%\.config\anilistwatched\config.toml
-```
-
-Example configuration:
 ```toml
 [webhook]
 bind = "0.0.0.0"
 port = 4091
 
 [anilist]
-token = "your_anilist_token_here"
+# Option A: Multi-user tokens (recommended)
+users = {
+  "Nilaun" = { token = "your-anilist-token-here", displayName = "Nilaun" }
+  "Rain" = { token = "your-anilist-token-here", displayName = "Rain" }
+}
+
+# Option B: Global token only (legacy)
+# token = "your-anilist-token-here"
 
 [jellyfin]
-apiKey = "your_jellyfin_api_key_here"
-url = "http://192.168.1.100:8096"
+apiKey = "your-jellyfin-api-key"
+url = "http://your-jellyfin-server:8096"
 libraryName = "Anime"
 ```
 
-## Troubleshooting
+### Multi-User Configuration
 
-### **Service Won't Start**
-1. Check the error log: `Get-Content "C:\ProgramData\AniListWebhook\service.err.log"`
-2. Verify configuration file exists and has correct permissions
-3. Ensure AniList token and Jellyfin API key are valid
+**Recommended approach** - Use Jellyfin usernames as keys:
 
-### **Compilation Errors**
-1. Verify Bun is installed: `bun --version`
-2. Check for TypeScript errors: `bun run check`
-3. Ensure all dependencies are installed: `bun install`
+```toml
+[anilist]
+users = {
+  "JellyfinUsername1" = { 
+    token = "anilist-token-1", 
+    displayName = "Optional Display Name" 
+  }
+  "JellyfinUsername2" = { 
+    token = "anilist-token-2", 
+    displayName = "Another User" 
+  }
+}
+```
 
-### **Permission Issues**
-1. Run PowerShell as Administrator
-2. Check firewall settings
-3. Verify service account has access to configuration files
+**Benefits:**
+- Each user has their own AniList account
+- Webhooks automatically route to the correct user
+- No need to manage GUIDs or user IDs
 
-### **Webhook Not Receiving Data**
-1. Verify Jellyfin webhook configuration
-2. Check service is running and listening on correct port
-3. Test webhook endpoint manually
-4. Review service logs for incoming requests
+### Jellyfin API Key
 
-## Features
+1. In Jellyfin Admin Dashboard, go to **Advanced** → **API Keys**
+2. Create a new API key
+3. Add it to your `config.toml`
 
-### **Automatic Compilation**
-- Always runs the latest version of your code
-- No manual compilation required
-- Automatic error detection during build
+## 🔧 Service Management
 
-### **Smart Service Management**
-- Automatic NSSM installation via Chocolatey
-- Proper service account configuration
-- Environment variable setup for configuration
+### Using PowerShell Scripts
 
-### **Professional Logging**
-- Structured logging to dedicated directories
-- Separate stdout and stderr streams
-- Easy log monitoring and debugging
+The setup script provides these functions:
 
-### **Security Features**
-- Firewall rule configuration
-- Service account isolation
-- Secure credential handling
+```powershell
+# Install/Update service
+.\scripts\setup-nssm-service.ps1
 
-## Updating the Service
+# Install without compilation (if already compiled)
+.\scripts\setup-nssm-service.ps1 -SkipCompile
 
-To update the service with new code:
+# Manual service management
+Start-Service AniListWebhook
+Stop-Service AniListWebhook
+Restart-Service AniListWebhook
+Remove-Service AniListWebhook
+```
 
-1. **Pull Latest Changes**
-   ```bash
-   git pull origin main
-   ```
+### Manual Service Management
 
-2. **Re-run Setup Script**
-   ```powershell
-   .\scripts\setup-nssm-service.ps1
-   ```
+```powershell
+# Start the service
+Start-Service AniListWebhook
 
-The script will automatically:
-- Compile the new code
-- Stop the existing service
-- Install the updated version
-- Restart the service
+# Stop the service
+Stop-Service AniListWebhook
 
-## System Requirements
+# Check service status
+Get-Service AniListWebhook
 
-- **Windows 10/11** or **Windows Server 2016+**
-- **PowerShell 5.1+** (Windows 10+ includes this by default)
-- **Administrator privileges** for service installation
-- **Bun runtime** for TypeScript compilation
-- **Internet access** for NSSM installation (if needed)
+# View logs
+Get-Content C:\Users\%USERNAME%\.config\anilistwatched\service.log -Tail 50
+Get-Content C:\Users\%USERNAME%\.config\anilistwatched\service.err.log -Tail 50
+```
 
-## Support
+## 📊 How It Works
+
+### 1. PlaybackStop Webhook
+- **Trigger**: Episode played to completion
+- **Action**: Updates AniList progress
+- **Auto-Add**: If anime not in any list, adds to "Watching"
+
+### 2. UserDataSaved Webhook
+- **Trigger**: Manual mark as watched/unwatched
+- **Smart Detection**: Queries Jellyfin API to determine actual state
+- **Fallback**: Uses series-level query if direct episode query fails
+- **Actions**: 
+  - Watched → Update AniList progress
+  - Unwatched → Reset progress to 0
+
+### 3. Multi-User Routing
+- Webhook receives `NotificationUsername` from Jellyfin
+- Looks up user-specific AniList token
+- Creates user-specific API instance
+- Updates correct AniList account
+
+## 🛠️ Development
+
+### Building from Source
+
+```bash
+# Install dependencies
+bun install
+
+# Type check
+bun run check
+
+# Compile to executable
+bun run compile
+
+# Run in development
+bun run dev
+```
+
+### Project Structure
+
+```
+src/
+├── cmd/
+│   ├── webhook.ts          # Main webhook server
+│   ├── webhook/
+│   │   ├── playbackstop.ts # PlaybackStop handler + UserDataSaved
+│   │   └── sync.ts         # Sync command
+│   └── configure.ts        # Configuration utility
+├── lib/
+│   ├── config.ts           # Configuration management
+│   ├── logger.ts           # Logging utilities
+│   └── jellyfin/
+│       ├── api.ts          # Jellyfin API client
+│       └── webhook.ts      # Webhook type definitions
+scripts/
+└── setup-nssm-service.ps1  # Windows service setup
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Service won't start:**
+- Check `service.err.log` for configuration errors
+- Ensure AniList tokens are valid
+- Verify Jellyfin API key and URL
+
+**Webhooks not working:**
+- Check if service is running: `Get-Service AniListWebhook`
+- Verify webhook URL in Jellyfin settings
+- Check firewall settings for port 4091
+
+**Episode state detection issues:**
+- Check `service.log` for retry attempts
+- Verify user has proper Jellyfin permissions
+- Check if AniList tokens are correctly configured
+
+### Logs
+
+- **Service Log**: `C:\Users\%USERNAME%\.config\anilistwatched\service.log`
+- **Error Log**: `C:\Users\%USERNAME%\.config\anilistwatched\service.err.log`
+
+### Debug Information
+
+The service logs:
+- Configured users at startup
+- Webhook processing details
+- API retry attempts and fallbacks
+- AniList update results
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Original project by [sjorge](https://github.com/sjorge/jellyfin-webhook-anilistwatched)
+- Enhanced with multi-user support and improved reliability
+- Built with TypeScript and Bun for modern development experience
+
+## 📞 Support
 
 If you encounter issues:
 
-1. Check the service logs first
-2. Verify all prerequisites are met
-3. Review the troubleshooting section above
-4. Check the [GitHub Issues](https://github.com/AtaraxyState/jellyfin-webhook-anilistwatched/issues) page
+1. Check the logs first
+2. Review this README and configuration
+3. Open an issue on GitHub with:
+   - Error messages from logs
+   - Your configuration (without tokens)
+   - Steps to reproduce
+
+---
+
+**Happy Anime Tracking! 🎌**

@@ -107,6 +107,14 @@ libraryName = "$libraryName"
 }
 
 try {
+  # Stop and remove existing service first to unlock the executable
+  Write-Host "Stopping and removing existing service to unlock executable..." -ForegroundColor Yellow
+  nssm stop $ServiceName *> $null
+  nssm remove $ServiceName confirm *> $null
+  
+  # Wait a moment for the process to fully terminate
+  Start-Sleep -Seconds 2
+  
   # Compile the project if not skipped
   if (-not $SkipCompile) {
     Compile-Project -ProjectDirectory $AppDirectory
@@ -128,9 +136,6 @@ try {
   }
 
   # Install / configure service
-  nssm stop  $ServiceName *> $null
-  nssm remove $ServiceName confirm *> $null
-
   nssm install $ServiceName "$App" $AppArgs
   if ($LASTEXITCODE -ne 0) { throw "nssm install failed ($LASTEXITCODE)." }
 

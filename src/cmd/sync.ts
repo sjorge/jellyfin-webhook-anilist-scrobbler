@@ -10,6 +10,20 @@ async function syncAction(): Promise<void> {
   const config: Config = readConfig();
   if (!validateConfig(config, true)) return;
 
+  // Log configured users for debugging/monitoring
+  if (config.anilist.users && Object.keys(config.anilist.users).length > 0) {
+    const userCount = Object.keys(config.anilist.users).length;
+    const userList = Object.keys(config.anilist.users).map(username => {
+      const user = config.anilist.users![username];
+      return `${username}${user.displayName ? ` (${user.displayName})` : ''}`;
+    }).join(', ');
+    log(`sync: configured ${userCount} user(s): ${userList}`, "info");
+  } else if (config.anilist.token) {
+    log("sync: using global AniList token", "info");
+  } else {
+    log("sync: no AniList tokens configured", "warn");
+  }
+
   const baseUrl = (config.jellyfin.url || "").trim();
   if (!baseUrl) {
     log("sync: jellyfin.url not configured; cannot backfill.", "error");

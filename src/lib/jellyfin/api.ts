@@ -128,6 +128,120 @@ export class JellyfinMiniApi {
   }
 
   /**
+   * Get user information by username
+   * @param username - The username to look up
+   * @return User information including ID
+   */
+  public async getUserByName(username: string): Promise<{
+    Id: string;
+    Name: string;
+  } | undefined> {
+    try {
+      const res = (await this.query(`/Users`)) as Array<{
+        Id: string;
+        Name: string;
+      }>;
+      
+      if (!res || !Array.isArray(res)) {
+        return undefined;
+      }
+      
+      // Find the user by username
+      const user = res.find(u => u.Name === username);
+      return user;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  /**
+   * Get episode information including play state
+   * @param episodeId - The episode item ID
+   * @param userId - The user ID (optional, for user-specific data)
+   * @return Episode information with UserData
+   */
+  public async getEpisodeInfo(episodeId: string, userId?: string): Promise<{
+    UserData?: {
+      Played: boolean;
+      PlayCount?: number;
+      UnplayedItemCount?: number;
+    };
+  } | undefined> {
+    try {
+      let endpoint = `/Items/${episodeId}?Fields=UserData`;
+      if (userId) {
+        endpoint = `/Users/${userId}/Items/${episodeId}?Fields=UserData`;
+      }
+      
+      const res = (await this.query(endpoint)) as {
+        UserData?: {
+          Played: boolean;
+          PlayCount?: number;
+          UnplayedItemCount?: number;
+        };
+      };
+      
+      if (!res) {
+        return undefined;
+      }
+      
+      return res;
+    } catch (error) {
+      // If the episode doesn't exist or we can't access it, return undefined
+      return undefined;
+    }
+  }
+
+  /**
+   * Alternative method to get episode play state from series level
+   * This can be used as a fallback when direct episode query fails
+   * @param seriesId - The series ID
+   * @param episodeNumber - The episode number
+   * @param userId - The user ID (required for user-specific data)
+   * @return Episode play state information
+   */
+  public async getEpisodePlayStateFromSeries(
+    seriesId: string,
+    episodeNumber: number,
+    userId: string
+  ): Promise<{
+    Played: boolean;
+    PlayCount?: number;
+  } | undefined> {
+    try {
+      // Always use user-specific endpoint to get UserData
+      const endpoint = `/Users/${userId}/Items?ParentId=${seriesId}&IncludeItemTypes=Episode&Fields=UserData&Recursive=true`;
+      
+      const res = (await this.query(endpoint)) as {
+        Items: Array<{
+          IndexNumber?: number;
+          UserData?: {
+            Played: boolean;
+            PlayCount?: number;
+          };
+        }>;
+      };
+      
+      if (!res || !res.Items) {
+        return undefined;
+      }
+      
+      // Find the specific episode
+      const episode = res.Items.find(item => item.IndexNumber === episodeNumber);
+      if (episode && episode.UserData) {
+        return {
+          Played: episode.UserData.Played || false,
+          PlayCount: episode.UserData.PlayCount
+        };
+      }
+      
+      return undefined;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  /**
    * Return a friendly base URL used for requests
    */
   public getBaseUrl(): string {

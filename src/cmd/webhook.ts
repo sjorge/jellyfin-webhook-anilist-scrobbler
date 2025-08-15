@@ -26,8 +26,25 @@ async function webhookAction(): Promise<void> {
     return;
   }
 
+  // Log configured users for debugging/monitoring
+  if (config.anilist.users && Object.keys(config.anilist.users).length > 0) {
+    const userCount = Object.keys(config.anilist.users).length;
+    const userList = Object.keys(config.anilist.users).map(username => {
+      const user = config.anilist.users![username];
+      return `${username}${user.displayName ? ` (${user.displayName})` : ''}`;
+    }).join(', ');
+    log(`webhook: configured ${userCount} user(s): ${userList}`, "info");
+  } else if (config.anilist.token) {
+    log("webhook: using global AniList token", "info");
+  } else {
+    log("webhook: no AniList tokens configured", "warn");
+  }
+
   const anilistScrobbler = new AnilistScrobbler(config);
   await anilistScrobbler.init();
+
+  // Log server configuration
+  log(`webhook: starting server on ${config.webhook.bind}:${config.webhook.port}`, "info");
 
   // setup server
   const server: Server = Bun.serve({

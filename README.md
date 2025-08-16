@@ -21,7 +21,7 @@ Clone the source and compile the `anilist-scrobbler` binary.
 ```bash
 git clone https://github.com/sjorge/jellyfin-webhook-anilist-scrobbler.git
 cd jellyfin-webhook-anilist-scrobbler
-bun install
+bun install --no-save --production
 ```
 
 You can store all files in /opt/anilistscrobbler for a tidy and self-contained setup, or you can copy bin/anilist-scrobbler to your system PATH.
@@ -106,7 +106,7 @@ anilist-scrobbler configure --webhook-port 4092
 
 To install dependencies, run:
 ```bash
-bun install
+bun install --no-save
 ```
 
 Here are some extra commands to help with development:

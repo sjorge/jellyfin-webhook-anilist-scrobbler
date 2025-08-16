@@ -77,7 +77,7 @@ A Jellyfin API key is needed to look up the AniList ID from the series, as the P
 1. Set the environment variable and configure the Jellyfin API key and AniList token:
 
 ```bash
-export ANILISTWATCHED_CONFIG=/opt/anilist-scrobbler/etc/config.toml
+export ANILISTWATCHED_CONFIG=/opt/anilistscrobbler/etc/config.toml
 anilist-scrobbler configure --jellyfin-api-key MY_API_KEY
 anilist-scrobbler configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
 ```
@@ -133,6 +133,6 @@ bun run compile
 
 To run in development mode without compiling a binary every time, execute:
 ```bash
-export ANILISTWATCHED_CONFIG=/opt/anilist-scrobbler/etc/config.toml
+export ANILISTWATCHED_CONFIG=/opt/anilistscrobbler/etc/config.toml
 bun run start -- webhook
 ```

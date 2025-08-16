@@ -6,6 +6,30 @@ import { log } from "lib/logger";
 import AniList from "anilist-node";
 import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
 import { JellyfinMiniApi } from "lib/jellyfin/api";
+
+/**
+ * Type for adding new entries to lists
+ */
+type AddEntryOptions = {
+  status?:
+    | "CURRENT"
+    | "COMPLETED"
+    | "PLANNING"
+    | "DROPPED"
+    | "PAUSED"
+    | "REPEATING";
+  progress?: number;
+  score?: number;
+  progressVolumes?: number;
+  repeat?: number;
+  priority?: number;
+  private?: boolean;
+  hiddenFromStatusLists?: boolean;
+  notes?: string;
+  startedAt?: { year: number; month: number; day: number };
+  completedAt?: { year: number; month: number; day: number };
+};
+
 /**
  * Type partial UpdateEntryOptions
  *

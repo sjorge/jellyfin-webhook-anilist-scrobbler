@@ -17,6 +17,9 @@ type PartialSeriesItemResult = {
       ProviderIds: {
         [name: string]: string;
       };
+      SeriesId?: string;
+      IndexNumber?: number;
+      ParentIndexNumber?: number;
     },
   ];
 };

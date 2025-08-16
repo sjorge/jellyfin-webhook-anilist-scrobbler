@@ -17,6 +17,7 @@ export type Config = {
   };
   anilist: {
     token?: string;
+    autoAdd: boolean;
   };
   jellyfin: {
     apiKey?: string;
@@ -41,7 +42,7 @@ export function readConfig(): Config {
       bind: "localhost",
       port: 4091,
     },
-    anilist: {},
+    anilist: { autoAdd: true },
     jellyfin: {},
   };
 

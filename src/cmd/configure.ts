@@ -25,6 +25,9 @@ async function configureAction(opts: OptionValues): Promise<void> {
   if (opts.anilistToken) config.anilist.token = `${opts.anilistToken}`;
   if (opts.jellyfinApiKey) config.jellyfin.apiKey = `${opts.jellyfinApiKey}`;
 
+  if (typeof opts.anilistAutoAdd == "boolean")
+    config.anilist.autoAdd = opts.anilistAutoAdd;
+
   if (!writeConfig(config)) {
     log(`Failed to update ${configFile}!`, "error");
     process.exitCode = 1;
@@ -63,8 +66,16 @@ export function addConfigureCommand(program: Command): void {
         return valueNumber;
       }),
     )
-    .option("--anilist-token <token>", "your anilist http client token")
     .option("--jellyfin-api-key <api_key>", "jellyfin API key")
+    .option("--anilist-token <token>", "your anilist http client token")
+    .option(
+      "--anilist-auto-add",
+      "automatically add anime to your watchlist after finishing episode 1",
+    )
+    .option(
+      "--no-anilist-auto-add",
+      "do not add anime to watchlist after finishing episode 1; progress will still be tracked",
+    )
     .option("--dump", "dump configuration")
     .action(configureAction);
 }

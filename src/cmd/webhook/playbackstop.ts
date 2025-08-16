@@ -173,8 +173,10 @@ export class AnilistScrobbler {
       if (result === undefined) {
         if (this.config.anilist.autoAdd) {
           try {
-            // XXX: potential issue with 1 episode shows!
-            const updatedEntry = this.createUpdatedEntry(episode);
+            const updatedEntry = this.createUpdatedEntry(
+              episode,
+              (await this.api.media.anime(id)).episodes,
+            );
             result = await this.api.lists.addEntry(id, updatedEntry);
           } catch (error) {
             return {

@@ -8,6 +8,9 @@ import { readConfig, validateConfig } from "lib/config";
 import { banner, log } from "lib/logger";
 import { AnilistScrobbler } from "cmd/webhook/playbackstop";
 
+const DEBUG_PAYLOAD: boolean =
+  process.env.ANILISTWATCHED_DEBUG_PAYLOAD === "true";
+
 /**
  * Entrypoint `webook` action for commander-js
  */
@@ -43,6 +46,13 @@ async function webhookAction(): Promise<void> {
         req.headers.get("user-agent")?.startsWith("Jellyfin-Server/")
       ) {
         const payload: BasePayload = await req.json();
+        if (DEBUG_PAYLOAD) {
+          log(
+            `webhook/payload: ${req.method} ${url.pathname} from ${clientIPPrintable} send payload: ${JSON.stringify(payload)}`,
+            "info",
+            reqid,
+          );
+        }
 
         if (payload.NotificationType == "PlaybackStop") {
           log(

@@ -3,7 +3,7 @@ Description=Scrobller watch status to anilist when jellyfin calls this webhook
 #Requires=opt-anilistscrobbler.mount
 
 [Service]
-Environment='ANILISTWATCHED_CONFIG=/opt/anilist-scrobbler/etc/config.toml'
+Environment='ANILISTWATCHED_CONFIG=/opt/anilistscrobbler/etc/config.toml'
 ExecStart=/opt/anilistscrobbler/bin/anilist-scrobbler webhook
 User=jellyfin
 #DynamicUser=yes

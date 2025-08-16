@@ -8,40 +8,6 @@ import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
 import { JellyfinMiniApi } from "lib/jellyfin/api";
 
 /**
- * Type for adding new entries to lists
- */
-type AddEntryOptions = {
-  status?:
-    | "CURRENT"
-    | "COMPLETED"
-    | "PLANNING"
-    | "DROPPED"
-    | "PAUSED"
-    | "REPEATING";
-  progress?: number;
-  score?: number;
-  progressVolumes?: number;
-  repeat?: number;
-  priority?: number;
-  private?: boolean;
-  hiddenFromStatusLists?: boolean;
-  notes?: string;
-  startedAt?: { year: number; month: number; day: number };
-  completedAt?: { year: number; month: number; day: number };
-};
-
-/**
- * Type partial UpdateEntryOptions
- *
- * We cannot use UpdateEntryOptions for updating as not all properties are writable,
- * this is a workaround for the broken type in anilist-node.
- */
-type UpdateEntryOptionsPartial = {
-  progress?: number;
-  status?: "CURRENT" | "COMPLETED";
-};
-
-/**
  * Type for storing our Scrobble result
  * @property success - records if the scrobble was successful
  * @property message - message to go along with the scrobble result
@@ -90,6 +56,28 @@ export class AnilistScrobbler {
     } else {
       this.profileId = profile.id;
     }
+  }
+
+  /**
+   * Creates an updated entry object for Anilist anime list tracking.
+   * @param {number} episode - The current episode number being watched.
+   * @param {number} [maxEpisodes] - Optional total number of episodes in the anime.
+   * @returns {UpdateEntryOptions} An object with updated entry details.
+   */
+  private createUpdatedEntry(
+    episode: number,
+    maxEpisodes?: number,
+  ): UpdateEntryOptions {
+    const updatedEntry: Partial<UpdateEntryOptions> = {
+      status: "CURRENT",
+      progress: episode,
+    };
+
+    if (maxEpisodes && episode === maxEpisodes) {
+      updatedEntry.status = "COMPLETED";
+    }
+
+    return updatedEntry as UpdateEntryOptions;
   }
 
   /**
@@ -147,19 +135,13 @@ export class AnilistScrobbler {
             }
 
             // create updated entry (UpdateEntryOptions type is broken)
-            const updatedEntry: UpdateEntryOptionsPartial = {
-              progress: episode,
-            };
-            if (updatedEntry.progress == entry.media.episodes) {
-              // mark as completed if episode is final episode
-              updatedEntry.status = "COMPLETED";
-            }
+            const updatedEntry = this.createUpdatedEntry(
+              episode,
+              entry.media.episodes,
+            );
 
             // apply update
-            result = await this.api.lists.updateEntry(
-              entry.id,
-              updatedEntry as UpdateEntryOptions,
-            );
+            result = await this.api.lists.updateEntry(entry.id, updatedEntry);
             break;
           }
         } else if (list.name == "Planning") {
@@ -176,31 +158,39 @@ export class AnilistScrobbler {
               } as ScrobbleResult;
 
             // create updated entry (UpdateEntryOptions type is broken)
-            const updatedEntry: UpdateEntryOptionsPartial = {
-              progress: episode,
-              status: "CURRENT",
-            };
-            if (updatedEntry.progress == entry.media.episodes) {
-              // mark as completed if episode is final episode
-              updatedEntry.status = "COMPLETED";
-            }
+            const updatedEntry = this.createUpdatedEntry(
+              episode,
+              entry.media.episodes,
+            );
 
             // apply update
-            result = await this.api.lists.updateEntry(
-              entry.id,
-              updatedEntry as UpdateEntryOptions,
-            );
+            result = await this.api.lists.updateEntry(entry.id, updatedEntry);
             break;
           }
         }
       }
 
-      if (result === undefined)
-        return {
-          success: false,
-          level: "warn",
-          message: `Anime (${id}) not on "Watching" or "Planning" list`,
-        } as ScrobbleResult;
+      if (result === undefined) {
+        if (this.config.anilist.autoAdd) {
+          try {
+            // XXX: potential issue with 1 episode shows!
+            const updatedEntry = this.createUpdatedEntry(episode);
+            result = await this.api.lists.addEntry(id, updatedEntry);
+          } catch (error) {
+            return {
+              success: false,
+              level: "error",
+              message: `Anime (${id}) could not be added to list: ${error instanceof Error ? error.message : "Unknown error"}`,
+            };
+          }
+        } else {
+          return {
+            success: false,
+            level: "warn",
+            message: `Anime (${id}) not on "Watching" or "Planning" list`,
+          } as ScrobbleResult;
+        }
+      }
 
       if (result.status == "COMPLETED")
         return {
@@ -217,11 +207,11 @@ export class AnilistScrobbler {
           ? `Anime (${id}) is ${result.status} and progess set to ${result.progress}.`
           : `API returned unexpected result: ${JSON.stringify(result)}`,
       } as ScrobbleResult;
-    } catch {
+    } catch (error) {
       return {
         success: false,
         level: "error",
-        message: `Something went wrong while connecting to anilist.`,
+        message: `Something went wrong while connecting to anilist: ${error instanceof Error ? error.message : "Unknown error"}`,
       } as ScrobbleResult;
     }
   }

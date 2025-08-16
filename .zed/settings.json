@@ -1,13 +1,11 @@
 {
-  "buffer_font_features": {
-    "calt": false
-  },
   "hard_tabs": false,
   "tab_size": 4,
   "languages": {
     "TypeScript": {
       "format_on_save": "on",
       "tab_size": 2,
+      /*
       "formatter": {
         "external": {
           "command": "bun",
@@ -19,11 +17,19 @@
             "{buffer_path}"
           ]
         }
-      }
+      },
+      */
+      "language_servers": [
+        "bun x typescript-language-server",
+        "typescript-language-server",
+        "!vtsls",
+        "..."
+      ]
     },
     "JSONC": {
       "format_on_save": "on",
       "tab_size": 2,
+      /*
       "formatter": {
         "external": {
           "command": "bun",
@@ -35,7 +41,14 @@
             "{buffer_path}"
           ]
         }
-      }
+      },
+      */
+      "language_servers": [
+        "bun x typescript-language-server",
+        "typescript-language-server",
+        "!vtsls",
+        "..."
+      ]
     }
   }
 }

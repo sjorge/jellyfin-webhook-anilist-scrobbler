@@ -8,7 +8,7 @@ import { deepmerge } from "deepmerge-ts";
 import { banner, log } from "lib/logger";
 
 /**
- * Type for Configuration of anilistwatched
+ * Type for Configuration of jellyfin-webhook-anilist-scrobbler
  */
 export type Config = {
   webhook: {

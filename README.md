@@ -1,4 +1,4 @@
-# Anilist Watched
+# Jellyfin Anilist Scrobller Webhook
 
 Jellyfin webhook target that will mark shows as watched on anilist.
 
@@ -8,14 +8,14 @@ To install dependencies:
 bun install
 ```
 
-Copy `bin/jw-anilist-watched` to somewhere in your path.
+Copy `bin/anilist-scrobbler` to somewhere in your path.
 
 ```bash
 # local user
-cp bin/jw-anilist-watched ~/.local/bin
+cp bin/anilist-scrobbler ~/.local/bin
 
 # system wide
-sudo cp bin/jw-anilist-watched /usr/local/bin
+sudo cp bin/anilist-scrobbler /usr/local/bin
 ```
 
 # Configuration
@@ -26,14 +26,14 @@ sudo cp bin/jw-anilist-watched /usr/local/bin
 1. approve the generated token by visting `https://anilist.co/api/v2/oauth/authorize?client_id={clientID}&response_type=token` (do not forget to replace clientID in the URL!)
 
 ```bash
-jw-anilist-watched configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
+anilist-scrobbler configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
 ```
 
 ## Jellyfin API key
 API key is needed to lookup the Anilist ID from the series, the PlaybackStop notification for episodes which we need for scrobbling does not include those.
 
 ```bash
-jw-anilist-watched configure --jellyfin-api-key MY_API_KEY
+anilist-scrobbler configure --jellyfin-api-key MY_API_KEY
 ```
 
 ## Jellyfin webhook

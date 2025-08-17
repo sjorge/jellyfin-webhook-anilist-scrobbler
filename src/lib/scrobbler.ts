@@ -2,7 +2,6 @@ import type { Config } from "lib/config";
 import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
 
 import AniList from "anilist-node";
-import { isAxiosError } from "axios";
 
 /**
  * Type for storing our Scrobble result
@@ -159,12 +158,8 @@ export class AnilistScrobbler {
             result = await this.api.lists.updateEntry(update.id, update.entry);
             break;
           } catch (error) {
-            // try again on 500 error from anilist api
-            if (
-              !isAxiosError(error) ||
-              error.response?.status !== 500 ||
-              attempt >= maxAttempts
-            ) {
+            // try again on error unless we are at maxAttempts
+            if (attempt >= maxAttempts) {
               throw error;
             }
 

@@ -1,6 +1,10 @@
 import type { Server } from "bun";
 import type { Config } from "lib/config";
-import type { BasePayload, PlaybackStopPayload } from "lib/jellyfin/webhook";
+import type {
+  BasePayload,
+  PlaybackStopPayload,
+  UserDataSavedPayload,
+} from "lib/jellyfin/webhook";
 
 import { Command } from "@commander-js/extra-typings";
 import { readConfig, validateConfig } from "lib/config";
@@ -8,8 +12,9 @@ import { banner, log } from "lib/logger";
 import { AnilistScrobbler } from "lib/scrobbler";
 import { JellyfinMiniApi } from "lib/jellyfin/api";
 import { webhookPlaybackStop } from "cmd/webhook/playbackstop";
+import { webhookUserDataSaved } from "cmd/webhook/userdatasaved";
 
-const NOTIFICATION_TYPES = ["PlaybackStop"];
+const NOTIFICATION_TYPES = ["PlaybackStop", "UserDataSaved"];
 const DEBUG_PAYLOAD: boolean =
   process.env.ANILISTWATCHED_DEBUG_PAYLOAD === "true";
 
@@ -76,10 +81,19 @@ async function webhookAction(): Promise<void> {
           );
         }
 
-        // Call webhook handler
+        // Call specific webhook handler based on NotificationType
         if (payload.NotificationType == "PlaybackStop") {
           return await webhookPlaybackStop(
             payload as PlaybackStopPayload,
+            reqid,
+            jellyfinApi[payload.ServerUrl],
+            anilistScrobbler,
+          );
+        }
+
+        if (payload.NotificationType == "UserDataSaved") {
+          return await webhookUserDataSaved(
+            payload as UserDataSavedPayload,
             reqid,
             jellyfinApi[payload.ServerUrl],
             anilistScrobbler,

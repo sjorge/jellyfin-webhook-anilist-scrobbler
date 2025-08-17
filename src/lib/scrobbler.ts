@@ -93,6 +93,8 @@ export class AnilistScrobbler {
 
     try {
       let result: UpdatedEntry | undefined;
+      let update: { id: number; entry: UpdateEntryOptions } | undefined;
+
       for (const list of await this.api.lists.anime(this.profileId)) {
         if (list.name == "Watching") {
           // only increase progress if in Watching list
@@ -118,14 +120,11 @@ export class AnilistScrobbler {
               } as ScrobbleResult;
             }
 
-            // create updated entry (UpdateEntryOptions type is broken)
-            const updatedEntry = this.createUpdatedEntry(
-              episode,
-              entry.media.episodes,
-            );
-
-            // apply update
-            result = await this.api.lists.updateEntry(entry.id, updatedEntry);
+            // prepare update
+            update = {
+              id: entry.id,
+              entry: this.createUpdatedEntry(episode, entry.media.episodes),
+            };
             break;
           }
         } else if (list.name == "Planning") {
@@ -141,18 +140,20 @@ export class AnilistScrobbler {
                 message: `Skipping update for anime (${id}), on "Planning" list but this is not the first episode.`,
               } as ScrobbleResult;
 
-            // create updated entry (UpdateEntryOptions type is broken)
-            const updatedEntry = this.createUpdatedEntry(
-              episode,
-              entry.media.episodes,
-            );
-
-            // apply update
-            result = await this.api.lists.updateEntry(entry.id, updatedEntry);
+            // prepare update
+            update = {
+              id: entry.id,
+              entry: this.createUpdatedEntry(episode, entry.media.episodes),
+            };
             break;
           }
         }
       }
+
+      // apply update
+      // XXX: handle 500 and retry after backoff
+      if (update)
+        result = await this.api.lists.updateEntry(update.id, update.entry);
 
       if (result === undefined) {
         if (this.config.anilist.autoAdd) {

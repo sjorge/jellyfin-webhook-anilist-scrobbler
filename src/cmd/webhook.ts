@@ -67,14 +67,30 @@ async function webhookAction(): Promise<void> {
 
         if (NOTIFICATION_TYPES.includes(payload.NotificationType)) {
           log(
-            `webhook: dispatching NotificationType ${payload.NotificationType} from ${clientIPPrintable}`,
+            `webhook: dispatching call for ${payload.NotificationType} NotificationType from ${clientIPPrintable}`,
             "info",
             reqid,
           );
+        } else {
+          const msg = `ignoring call for ${payload.NotificationType} NotificationType from ${clientIPPrintable}`;
+          log(
+            `webhook: ${msg}, please check your webhook configuration in Jellyfin`,
+            "info",
+            reqid,
+          );
+          return new Response(msg, {
+            status: 200,
+            statusText: "OK",
+          });
         }
 
         // Initialize Jellyfin API for originating server if not already initialized
         if (jellyfinApi[payload.ServerUrl] === undefined) {
+          log(
+            `webhook: creating Jellyfin API connection for ${payload.ServerUrl}`,
+            "info",
+            reqid,
+          );
           jellyfinApi[payload.ServerUrl] = new JellyfinMiniApi(
             payload.ServerUrl,
             config.jellyfin.apiKey as string,

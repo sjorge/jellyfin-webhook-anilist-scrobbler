@@ -156,6 +156,13 @@ export class AnilistScrobbler {
 
       if (result === undefined) {
         if (this.config.anilist.autoAdd) {
+          if (episode != 1)
+            return {
+              success: false,
+              level: "warn",
+              message: `Skipping add anime (${id}), this is not the first episode.`,
+            } as ScrobbleResult;
+
           try {
             const updatedEntry = this.createUpdatedEntry(
               episode,

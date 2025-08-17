@@ -1,13 +1,15 @@
 import type { Server } from "bun";
-import { Command } from "@commander-js/extra-typings";
-
 import type { Config } from "lib/config";
 import type { BasePayload, PlaybackStopPayload } from "lib/jellyfin/webhook";
 
+import { Command } from "@commander-js/extra-typings";
 import { readConfig, validateConfig } from "lib/config";
 import { banner, log } from "lib/logger";
-import { AnilistScrobbler } from "cmd/webhook/playbackstop";
+import { AnilistScrobbler } from "lib/scrobbler";
+import { JellyfinMiniApi } from "lib/jellyfin/api";
+import { webhookPlaybackStop } from "cmd/webhook/playbackstop";
 
+const NOTIFICATION_TYPES = ["PlaybackStop"];
 const DEBUG_PAYLOAD: boolean =
   process.env.ANILISTWATCHED_DEBUG_PAYLOAD === "true";
 
@@ -25,6 +27,10 @@ async function webhookAction(): Promise<void> {
 
   const anilistScrobbler = new AnilistScrobbler(config);
   await anilistScrobbler.init();
+
+  const jellyfinApi: {
+    [url: string]: JellyfinMiniApi;
+  } = {};
 
   // setup server
   const server: Server = Bun.serve({
@@ -54,15 +60,29 @@ async function webhookAction(): Promise<void> {
           );
         }
 
-        if (payload.NotificationType == "PlaybackStop") {
+        if (NOTIFICATION_TYPES.includes(payload.NotificationType)) {
           log(
             `webhook: dispatching NotificationType ${payload.NotificationType} from ${clientIPPrintable}`,
             "info",
             reqid,
           );
-          return await anilistScrobbler.webhookPlaybackStop(
+        }
+
+        // Initialize Jellyfin API for originating server if not already initialized
+        if (jellyfinApi[payload.ServerUrl] === undefined) {
+          jellyfinApi[payload.ServerUrl] = new JellyfinMiniApi(
+            payload.ServerUrl,
+            config.jellyfin.apiKey as string,
+          );
+        }
+
+        // Call webhook handler
+        if (payload.NotificationType == "PlaybackStop") {
+          return await webhookPlaybackStop(
             payload as PlaybackStopPayload,
             reqid,
+            jellyfinApi[payload.ServerUrl],
+            anilistScrobbler,
           );
         }
       }

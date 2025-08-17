@@ -2,6 +2,7 @@ import type { Config } from "lib/config";
 import type { UpdatedEntry, UpdateEntryOptions } from "anilist-node";
 
 import AniList from "anilist-node";
+import { isAxiosError } from "axios";
 
 /**
  * Type for storing our Scrobble result
@@ -150,10 +151,29 @@ export class AnilistScrobbler {
         }
       }
 
-      // apply update
-      // XXX: handle 500 and retry after backoff
-      if (update)
-        result = await this.api.lists.updateEntry(update.id, update.entry);
+      // apply update (try 3 times)
+      if (update) {
+        const maxAttempts = 3;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          try {
+            result = await this.api.lists.updateEntry(update.id, update.entry);
+            break;
+          } catch (error) {
+            // try again on 500 error from anilist api
+            if (
+              !isAxiosError(error) ||
+              error.response?.status !== 500 ||
+              attempt >= maxAttempts
+            ) {
+              throw error;
+            }
+
+            await new Promise((resolve) =>
+              setTimeout(resolve, (attempt + 1) * 30 * 1000),
+            );
+          }
+        }
+      }
 
       if (result === undefined) {
         if (this.config.anilist.autoAdd) {

@@ -98,6 +98,7 @@ anilist-scrobbler configure --webhook-port 4092
 1. Click `Add Generic Destination`.
 1. Set the `Webhook URL` to the URL where this webhook is listening, using the `/` endpoint, e.g., `http://localhost:4091/`.
 1. Only check `Playback Stop` under `Notification Type`.
+1. Optionally also check `User Data Saved` under `Notification Type` to scrobble manually marked as watched episodes.
 1. Only check your user under `User Filter`.
 1. Only check `Episodes` under `Item Type`.
 1. Check `Send All Properties (ignores template)`.

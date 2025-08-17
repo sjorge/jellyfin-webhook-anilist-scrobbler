@@ -20,8 +20,8 @@ export async function webhookUserDataSaved(
   scrobbler: AnilistScrobbler,
 ): Promise<Response> {
   // we are only interested in toggle played events for episodes
-  // XXX: what happens if we toggle a series?
-  // XXX: do we also want to unscrobble episodes?
+  // WARN: when an entire season or show is marked as watched, we receive a notification for each episode
+  // XXX: Do we want to handle unscrobble when marked Played=false, if we do see the warning above
   if (
     payload.SaveReason != "TogglePlayed" ||
     !payload.Played ||

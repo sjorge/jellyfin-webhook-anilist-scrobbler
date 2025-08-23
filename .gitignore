@@ -5,6 +5,9 @@ TODO
 # bin
 bin/
 
+# etc
+etc/
+
 # tests
 tests/
 

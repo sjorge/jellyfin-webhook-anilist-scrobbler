@@ -78,8 +78,8 @@ A Jellyfin API key is needed to look up the AniList ID from the series, as the P
 
 ```bash
 export ANILISTWATCHED_CONFIG=/opt/anilistscrobbler/etc/config.toml
-anilist-scrobbler configure --jellyfin-api-key MY_API_KEY
 anilist-scrobbler configure --anilist-token MY_VERY_LONG_TOKEN_STRING_HERE
+anilist-scrobbler configure --jellyfin-api-key MY_API_KEY
 ```
 
 2. If using multiple instances, make sure they have a unique port. The default port is *4091*, so you can, for example, increase it by 1 for each new user:

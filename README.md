@@ -28,6 +28,18 @@ chmod +x /tmp/setup-linux.sh
 /tmp/setup-linux.sh /opt/anilist-scrobbler user2
 ```
 
+#### Windows
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/sjorge/jellyfin-webhook-anilist-scrobbler/refs/heads/main/docs/scripts/setup-windows.ps1" -OutFile "$env:TEMP\setup-windows.ps1"
+
+# single instace
+& "$env:TEMP\setup-windows.ps1" -InstallPath "C:\Program Files\AnilistScrobbler"
+# multi instance
+& "$env:TEMP\setup-windows.ps1" -InstallPath "C:\Program Files\AnilistScrobbler" -InstanceName "user1"
+& "$env:TEMP\setup-windows.ps1" -InstallPath "C:\Program Files\AnilistScrobbler" -InstanceName "user2"
+```
+
 ### Building the Scrobbler Webhook
 
 #### Linux

@@ -12,7 +12,23 @@ A simple Jellyfin webhook that scrobbles your anime watching progress to AniList
 - [Bun runtime](https://bun.sh/) (for building only; the binary can be moved to a different system)
 - Git (for building only, to clone the repository)
 
-### 1. Building the Scrobbler Webhook
+### Quick Install
+
+There are some helper scripts that take some manual work out of installing.
+
+#### Linux
+
+```bash
+wget -O /tmp/setup-linux.sh https://raw.githubusercontent.com/sjorge/jellyfin-webhook-anilist-scrobbler/refs/heads/main/docs/scripts/setup-linux.sh
+chmod +x /tmp/setup-linux.sh
+# single instace
+/tmp/setup-linux.sh /opt/anilist-scrobbler
+# multi instance
+/tmp/setup-linux.sh /opt/anilist-scrobbler user1
+/tmp/setup-linux.sh /opt/anilist-scrobbler user2
+```
+
+### Building the Scrobbler Webhook
 
 #### Linux
 
@@ -56,7 +72,7 @@ systemctl enable --now anilist-scrobbler@user1.service
 systemctl enable --now anilist-scrobbler@user2.service
 ```
 
-### 2. Generating AniList API Token
+### Generating AniList API Token
 
 📝 For multiple users, do this for each AniList account.
 
@@ -66,7 +82,7 @@ systemctl enable --now anilist-scrobbler@user2.service
 1. Approve the generated token by visiting `https://anilist.co/api/v2/oauth/authorize?client_id={clientID}&response_type=token` (make sure to replace `clientID` in the URL!).
 1. Copy your access token for later use.
 
-### 3. Generating Webhook Configuration
+### Generating Webhook Configuration
 
 A Jellyfin API key is needed to look up the AniList ID from the series, as the PlaybackStop notification for episodes does not include them.
 
@@ -88,7 +104,7 @@ anilist-scrobbler configure --jellyfin-api-key MY_API_KEY
 anilist-scrobbler configure --webhook-port 4092
 ```
 
-### 4. Configure Webhook in Jellyfin
+### Configure Webhook in Jellyfin
 
 📝 For multiple users, set up separate webhooks with different `User Filter` and port in the `Webhook URL`.
 

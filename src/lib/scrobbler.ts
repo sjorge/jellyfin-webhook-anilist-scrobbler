@@ -110,7 +110,7 @@ export class AnilistScrobbler {
                 message: `Skipping update for anime (${id}), anilist progress (${entry.progress}) >= current episode (${episode}).`,
               } as ScrobbleResult;
             } else if (
-              entry.media.episodes == undefined ||
+              entry.media.episodes === undefined ||
               entry.media.episodes < episode
             ) {
               return {
